@@ -69,4 +69,5 @@ func init() {
 func main() {
 	flag.Parse()
 	fmt.Println(args)
+	fmt.Println(env)
 }
