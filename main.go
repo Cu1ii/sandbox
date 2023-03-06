@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"sandbox/sandbox"
 )
 
 type Args []string
@@ -47,27 +48,30 @@ var (
 )
 
 func init() {
-	flag.IntVar(&max_cpu_time, "max_cpu_time", 0, "(ms): max cpu time this process can cost, -1 for unlimited")
-	flag.IntVar(&max_real_time, "max_real_time", 0, "(ms): max time this process can run, -1 for unlimited")
-	flag.IntVar(&max_memory, "max_memory", 0, "(byte): max size of the process' virtual memory (address space), -1 for unlimited")
-	flag.IntVar(&max_stack, "max_stack", 0, "(byte): max size of the process' stack size")
-	flag.IntVar(&max_process_number, "max_process_number", 0, "max number of processes that can be created for the real user id of the calling process, -1 for unlimited")
-	flag.IntVar(&max_output_size, "max_output_size", 0, "(byte): max size of data this process can output to stdout, stderr and file, -1 for unlimited")
-	flag.IntVar(&memory_limit_check_only, "memory_limit_check_only", 0, "if this value equals 0, we will only check memory usage number, because setrlimit(maxrss) will cause some crash issues")
-	flag.StringVar(&exe_path, "exe_path", "", "path of file to run")
-	flag.StringVar(&input_file, "input_file", "", "redirect content of this file to process's stdin")
-	flag.StringVar(&output_file, "output_file", "", "redirect process's stdout to this file")
-	flag.StringVar(&error_file, "error_file", "", "redirect process's stderr to this file")
-	flag.StringVar(&log_path, "log_path", "", "judger log path")
-	flag.StringVar(&seccomp_rule_name, "seccomp_rule_name", "", "(string or NULL): seccomp rules used to limit process system calls. Name is used to call corresponding functions.")
-	flag.IntVar(&uid, "uid", 0, "user to run this process")
-	flag.IntVar(&gid, "gid", 0, "user group this process belongs to")
-	flag.Var(&args, "args", "(string array terminated by NULL): arguments to run this process")
-	flag.Var(&env, "env", "(string array terminated by NULL): environment variables this process can get")
+	flag.IntVar(&max_cpu_time, "max_cpu_time", 0, "Max CPU Time (ms)")
+	flag.IntVar(&max_real_time, "max_real_time", 0, "Max Real Time (ms)")
+	flag.IntVar(&max_memory, "max_memory", 0, "Max Memory (byte)")
+	flag.IntVar(&max_stack, "max_stack", 0, "Max Stack (byte, default 16M)")
+	flag.IntVar(&max_process_number, "max_process_number", 0, "Max Process Number")
+	flag.IntVar(&max_output_size, "max_output_size", 0, "Max Output Size (byte)")
+	flag.IntVar(&memory_limit_check_only, "memory_limit_check_only", 0, "only check memory usage, do not setrlimit (default False)")
+
+	flag.StringVar(&exe_path, "exe_path", "", "Exe Path")
+	flag.StringVar(&input_file, "input_file", "", "Input Path")
+	flag.StringVar(&output_file, "output_file", "", "Output Path")
+	flag.StringVar(&error_file, "error_file", "", "Error Path")
+	flag.StringVar(&log_path, "log_path", "", "Log Path")
+	flag.StringVar(&seccomp_rule_name, "seccomp_rule_name", "", "Seccomp Rule Name")
+
+	flag.IntVar(&uid, "uid", 0, "UID (default 65534)")
+	flag.IntVar(&gid, "gid", 0, "GID (default 65534)")
+	flag.Var(&args, "args", "Arg")
+	flag.Var(&env, "env", "Env")
 }
 
 func main() {
 	flag.Parse()
 	fmt.Println(args)
 	fmt.Println(env)
+	sandbox.LogOpen("")
 }
