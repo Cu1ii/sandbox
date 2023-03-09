@@ -104,8 +104,21 @@ func childProcess(logfile *os.File, _config *config) {
 				os.Exit(DUP2_FAILED)
 			}
 		}
+		// redirect stderr -> file
 		if err := syscall.Dup2(errorFile.Fd(), os.Stderr); err != nil {
 			os.Exit(DUP2_FAILED)
+		}
+	}
+
+	if _config.Gid != -1 {
+		if err := syscall.Setegid(int(_config.Gid)); err != nil {
+			os.Exit(SETUID_FAILED)
+		}
+	}
+
+	if _config.Uid != -1 {
+		if err := syscall.Seteuid(int(_config.Uid)); err != nil {
+			os.Exit(SETUID_FAILED)
 		}
 	}
 

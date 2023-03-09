@@ -21,7 +21,7 @@ const (
 	LOAD_SECCOMP_FAILED = -6
 	SETRLIMIT_FAILED    = -7
 	DUP2_FAILED         = -8
-	SetuidFailed        = -9
+	SETUID_FAILED       = -9
 	EXECVE_FAILED       = -10
 	SpjError            = -11
 )
