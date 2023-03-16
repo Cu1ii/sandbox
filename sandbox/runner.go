@@ -26,7 +26,7 @@ const (
 	SpjError            = -11
 )
 
-type config struct {
+type Config struct {
 	MaxCpuTime           int
 	MaxRealTime          int
 	MaxMemory            int64
@@ -38,9 +38,9 @@ type config struct {
 	InputPath            string
 	OutputPath           string
 	ErrorPath            string
-	Args                 [ArgsMaxNumber]string
-	Env                  [EnvMaxNumber]string
-	logPath              string
+	Args                 []string
+	Env                  []string
+	LogPath              string
 	SeccompRuleName      string
 	Uid                  int64
 	Gid                  int64
@@ -55,7 +55,7 @@ const (
 	SYSTEM_ERROR             = 5
 )
 
-type result struct {
+type Result struct {
 	CpuTime  int
 	RealTime int
 	Memory   int64
@@ -65,7 +65,7 @@ type result struct {
 	Result   int
 }
 
-func initResult(_result *result) {
+func initResult(_result *Result) {
 	_result.Result = SUCCESS
 	_result.Error = SUCCESS
 	_result.CpuTime = 0
@@ -75,8 +75,8 @@ func initResult(_result *result) {
 	_result.Memory = 0
 }
 
-func run(_config *config, _result *result) error {
-	logfile := LogOpen(_config.logPath)
+func Run(_config *Config, _result *Result) error {
+	logfile := LogOpen(_config.LogPath)
 	defer CloseFile(logfile)
 	initResult(_result)
 	uid := os.Geteuid()
@@ -127,10 +127,10 @@ func run(_config *config, _result *result) error {
 
 		}
 		if status.Signal() != 0 {
-			_result.Signal = status.Signal()
+			_result.Signal = int(status.Signal())
 		}
 
-		if _result.Signal == syscall.SIGUSR1 {
+		if _result.Signal == int(syscall.SIGUSR1) {
 			_result.Result = SYSTEM_ERROR
 		} else {
 			_result.ExitCode = status.ExitStatus()
@@ -139,7 +139,7 @@ func run(_config *config, _result *result) error {
 			if _result.ExitCode != 0 {
 				_result.Result = RUNTIME_ERROR
 			}
-			if _result.Signal == syscall.SIGSEGV {
+			if _result.Signal == int(syscall.SIGSEGV) {
 				if _config.MaxMemory != UNLIMITED && _result.Memory > _config.MaxMemory {
 					_result.Result = MEMORY_LIMIT_EXCEEDED
 				} else {

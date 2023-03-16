@@ -1,9 +1,10 @@
 package sandbox
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"sync"
+	"syscall"
 )
 
 const (
@@ -14,7 +15,6 @@ const (
 )
 
 var (
-	mutex        = sync.Mutex{}
 	logLevelNote = [5]string{"FATAL", "WARNING", "INFO", "DEBUG"}
 )
 
@@ -56,9 +56,13 @@ func logWrite(level int, logFp *os.File, message string) {
 		log.Println("can not open log file " + logFp.Name())
 		return
 	}
-	mutex.Lock()
-	defer mutex.Unlock()
-	log.SetPrefix("[" + logLevelNote[level] + "] ")
-	log.SetOutput(logFp)
-	log.Println(message)
+	if err := syscall.Flock(int(logFp.Fd()), syscall.LOCK_EX); err == nil {
+		log.SetPrefix("[" + logLevelNote[level] + "] ")
+		log.SetOutput(logFp)
+		log.Println(message)
+		_ = syscall.Flock(int(logFp.Fd()), syscall.LOCK_UN)
+	} else {
+		fmt.Fprintln(os.Stderr, "flock error")
+	}
+
 }

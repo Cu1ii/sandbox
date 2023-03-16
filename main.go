@@ -48,13 +48,13 @@ var (
 )
 
 func init() {
-	flag.IntVar(&max_cpu_time, "max_cpu_time", 0, "Max CPU Time (ms)")
-	flag.IntVar(&max_real_time, "max_real_time", 0, "Max Real Time (ms)")
-	flag.IntVar(&max_memory, "max_memory", 0, "Max Memory (byte)")
-	flag.IntVar(&max_stack, "max_stack", 0, "Max Stack (byte, default 16M)")
-	flag.IntVar(&max_process_number, "max_process_number", 0, "Max Process Number")
-	flag.IntVar(&max_output_size, "max_output_size", 0, "Max Output Size (byte)")
-	flag.IntVar(&memory_limit_check_only, "memory_limit_check_only", 0, "only check memory usage, do not setrlimit (default False)")
+	flag.IntVar(&max_cpu_time, "max_cpu_time", -1, "Max CPU Time (ms)")
+	flag.IntVar(&max_real_time, "max_real_time", -1, "Max Real Time (ms)")
+	flag.IntVar(&max_memory, "max_memory", -1, "Max Memory (byte)")
+	flag.IntVar(&max_stack, "max_stack", -1, "Max Stack (byte, default 16M)")
+	flag.IntVar(&max_process_number, "max_process_number", -1, "Max Process Number")
+	flag.IntVar(&max_output_size, "max_output_size", -1, "Max Output Size (byte)")
+	flag.IntVar(&memory_limit_check_only, "memory_limit_check_only", -1, "only check memory usage, do not setrlimit (default False)")
 
 	flag.StringVar(&exe_path, "exe_path", "", "Exe Path")
 	flag.StringVar(&input_file, "input_file", "", "Input Path")
@@ -63,15 +63,123 @@ func init() {
 	flag.StringVar(&log_path, "log_path", "", "Log Path")
 	flag.StringVar(&seccomp_rule_name, "seccomp_rule_name", "", "Seccomp Rule Name")
 
-	flag.IntVar(&uid, "uid", 0, "UID (default 65534)")
-	flag.IntVar(&gid, "gid", 0, "GID (default 65534)")
+	flag.IntVar(&uid, "uid", -1, "UID (default 65534)")
+	flag.IntVar(&gid, "gid", -1, "GID (default 65534)")
 	flag.Var(&args, "args", "Arg")
 	flag.Var(&env, "env", "Env")
 }
 
 func main() {
 	flag.Parse()
-	fmt.Println(args)
-	fmt.Println(env)
-	sandbox.LogOpen("")
+	_config := sandbox.Config{}
+	if max_cpu_time > -1 {
+		_config.MaxCpuTime = max_cpu_time
+	} else {
+		_config.MaxCpuTime = sandbox.UNLIMITED
+	}
+
+	if max_real_time > -1 {
+		_config.MaxRealTime = max_real_time
+	} else {
+		_config.MaxRealTime = sandbox.UNLIMITED
+	}
+
+	if max_memory > -1 {
+		_config.MaxMemory = int64(max_memory)
+	} else {
+		_config.MaxMemory = sandbox.UNLIMITED
+	}
+
+	if memory_limit_check_only > -1 {
+		_config.MemoryLimitCheckOnly = memory_limit_check_only
+	} else {
+		_config.MemoryLimitCheckOnly = 0
+	}
+
+	if max_stack > -1 {
+		_config.MaxStack = int64(max_stack)
+	} else {
+		_config.MaxStack = 16 * 1024 * 1024
+	}
+
+	if max_process_number > -1 {
+		_config.MaxProcessNumber = max_process_number
+	} else {
+		_config.MaxStack = sandbox.UNLIMITED
+	}
+
+	if max_output_size > -1 {
+		_config.MaxOutputSize = int64(max_output_size)
+	} else {
+		_config.MaxStack = sandbox.UNLIMITED
+	}
+
+	_config.ExePath = exe_path
+
+	if input_file != "" {
+		_config.InputPath = input_file
+	} else {
+		_config.InputPath = "/dev/stdin"
+	}
+
+	if output_file != "" {
+		_config.OutputPath = output_file
+	} else {
+		_config.OutputPath = "/dev/stdout"
+	}
+
+	if error_file != "" {
+		_config.ErrorPath = error_file
+	} else {
+		_config.ErrorPath = "/dev/stderr"
+	}
+
+	if len(args) > 0 {
+		copy(_config.Args, args)
+	}
+
+	if len(env) > 0 {
+		copy(_config.Env, env)
+	}
+
+	if log_path != "" {
+		_config.LogPath = log_path
+	} else {
+		_config.ErrorPath = "judger.log"
+	}
+
+	if seccomp_rule_name != "" {
+		_config.SeccompRuleName = seccomp_rule_name
+	}
+
+	if uid > -1 {
+		_config.Uid = int64(uid)
+	} else {
+		_config.Uid = 65534
+	}
+
+	if gid > -1 {
+		_config.Gid = int64(gid)
+	} else {
+		_config.Gid = 65534
+	}
+	_result := sandbox.Result{}
+	sandbox.Run(&_config, &_result)
+	str := "{\n" +
+		"    \"cpu_time\": %d,\n" +
+		"    \"real_time\": %d,\n" +
+		"    \"memory\": %ld,\n" +
+		"    \"signal\": %d,\n" +
+		"    \"exit_code\": %d,\n" +
+		"    \"error\": %d,\n" +
+		"    \"result\": %d\n" +
+		"}"
+	fmt.Printf(str,
+		_result.CpuTime,
+		_result.RealTime,
+		_result.Memory,
+		_result.Signal,
+		_result.ExitCode,
+		_result.Error,
+		_result.Result)
 }

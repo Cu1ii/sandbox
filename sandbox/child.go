@@ -5,7 +5,7 @@ import (
 	"syscall"
 )
 
-func childProcess(logfile *os.File, _config *config) {
+func childProcess(logfile *os.File, _config *Config) {
 
 	var inputFile *os.File
 	var outputFile *os.File
@@ -48,13 +48,16 @@ func childProcess(logfile *os.File, _config *config) {
 		}
 	}
 
+	// https://go.dev/misc/cgo/test/issue18146.go
+	const SYS_RLIMIT_NPROC = 6
+
 	// set process number limit
 	if _config.MaxProcessNumber != UNLIMITED {
 		maxProcessNumber := syscall.Rlimit{
 			Cur: uint64(_config.MaxProcessNumber),
 			Max: uint64(_config.MaxProcessNumber),
 		}
-		err := syscall.Setrlimit(syscall.RLIMIT_NPROC, &maxProcessNumber)
+		err := syscall.Setrlimit(SYS_RLIMIT_NPROC, &maxProcessNumber)
 		if err != nil {
 			os.Exit(SETRLIMIT_FAILED)
 		}
@@ -79,7 +82,7 @@ func childProcess(logfile *os.File, _config *config) {
 		// redirect file -> stdin
 		// On success, these system calls return the new descriptor.
 		// On error, -1 is returned, and errno is set appropriately.
-		if err := syscall.Dup2(inputFile.Fd(), os.Stdin); err != nil {
+		if err := syscall.Dup2(int(inputFile.Fd()), int(os.Stdin.Fd())); err != nil {
 			os.Exit(DUP2_FAILED)
 		}
 	}
@@ -89,7 +92,7 @@ func childProcess(logfile *os.File, _config *config) {
 		if err != nil {
 			os.Exit(DUP2_FAILED)
 		}
-		if err := syscall.Dup2(outputFile.Fd(), os.Stdout); err != nil {
+		if err := syscall.Dup2(int(outputFile.Fd()), int(os.Stdout.Fd())); err != nil {
 			os.Exit(DUP2_FAILED)
 		}
 	}
@@ -99,13 +102,13 @@ func childProcess(logfile *os.File, _config *config) {
 		if _config.OutputPath != "" && _config.ErrorPath == _config.OutputPath {
 			errorFile = outputFile
 		} else {
-			errorFile, err = os.OpenFile(_config.InputPath, os.O_WRONLY, 0666)
+			errorFile, err = os.OpenFile(_config.ErrorPath, os.O_WRONLY, 0666)
 			if err != nil {
 				os.Exit(DUP2_FAILED)
 			}
 		}
 		// redirect stderr -> file
-		if err := syscall.Dup2(errorFile.Fd(), os.Stderr); err != nil {
+		if err := syscall.Dup2(int(errorFile.Fd()), int(os.Stderr.Fd())); err != nil {
 			os.Exit(DUP2_FAILED)
 		}
 	}
@@ -147,8 +150,8 @@ func childProcess(logfile *os.File, _config *config) {
 			os.Exit(LOAD_SECCOMP_FAILED)
 		}
 	}
-	err := syscall.Exec(_config.ExePath, _config.Args, _config.Env)
-	if err != nil {
+	if err := syscall.Exec(_config.ExePath, _config.Args, _config.Env); err != nil {
 		os.Exit(EXECVE_FAILED)
 	}
+
 }
