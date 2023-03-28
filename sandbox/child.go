@@ -127,23 +127,23 @@ func childProcess(logfile *os.File, _config *Config) {
 
 	if _config.SeccompRuleName != "" {
 		if "c_cpp" == _config.SeccompRuleName {
-			if cCppSeccompRules(_config) != SUCCESS {
+			if c_cpp_file_io_seccomp_rules(_config) != SUCCESS {
 				os.Exit(LOAD_SECCOMP_FAILED)
 			}
 		} else if "c_cpp_file_io" == _config.SeccompRuleName {
-			if cCppFileIoSeccompRules(_config) != SUCCESS {
+			if c_cpp_file_io_seccomp_rules(_config) != SUCCESS {
 				os.Exit(LOAD_SECCOMP_FAILED)
 			}
 		} else if "general" == _config.SeccompRuleName {
-			if generalSeccompRules(_config) != SUCCESS {
+			if general_seccomp_rules(_config) != SUCCESS {
 				os.Exit(LOAD_SECCOMP_FAILED)
 			}
 		} else if "golang" == _config.SeccompRuleName {
-			if golangSeccompRules(_config) != SUCCESS {
+			if golang_seccomp_rules(_config) != SUCCESS {
 				os.Exit(LOAD_SECCOMP_FAILED)
 			}
 		} else if "node" == _config.SeccompRuleName {
-			if nodeSeccompRules(_config) != SUCCESS {
+			if node_seccomp_rules(_config) != SUCCESS {
 				os.Exit(LOAD_SECCOMP_FAILED)
 			}
 		} else {
@@ -154,4 +154,5 @@ func childProcess(logfile *os.File, _config *Config) {
 		os.Exit(EXECVE_FAILED)
 	}
 
+	//os.StartProcess(_config.ExePath)
 }

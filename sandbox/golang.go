@@ -23,6 +23,7 @@ func golangSeccompRules(_config *Config) int {
 			return LOAD_SECCOMP_FAILED
 		}
 	}
+	defer filter.Release()
 	// do not allow "w" and "rw" using open
 	if err := filter.AddRuleConditional(
 		syscall.SYS_OPEN,

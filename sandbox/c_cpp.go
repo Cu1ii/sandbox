@@ -27,7 +27,7 @@ func _cCppSeccompRules(_config *Config, allow_wirte_file bool) int {
 			return LOAD_SECCOMP_FAILED
 		}
 	}
-
+	defer filter.Release()
 	// add extra rule for execve
 	filter.AddRule(libseccomp.ScmpSyscall(syscall.SYS_EXECVE), libseccomp.ActAllow)
 	if !allow_wirte_file {
@@ -87,10 +87,10 @@ func _cCppSeccompRules(_config *Config, allow_wirte_file bool) int {
 	return 0
 }
 
-func cCppSeccompRules(_config *config) int {
+func cCppSeccompRules(_config *Config) int {
 	return _cCppSeccompRules(_config, false)
 }
 
-func cCppFileIoSeccompRules(_config *config) int {
+func cCppFileIoSeccompRules(_config *Config) int {
 	return _cCppSeccompRules(_config, true)
 }

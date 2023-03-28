@@ -17,6 +17,7 @@ func nodeSeccompRules(_config *Config) int {
 		SYS_EXECVEAT,
 	}
 	filter, err := libseccomp.NewFilter(libseccomp.ActAllow)
+	defer filter.Release()
 	if err != nil {
 		return LOAD_SECCOMP_FAILED
 	}
