@@ -1,15 +1,31 @@
 package sandbox
 
 import (
+	"fmt"
 	"os"
 	"syscall"
+	// "strconv"
 )
+
+var inputFile = (*os.File)(nil)
+var outputFile = (*os.File)(nil)
+var errorFile = (*os.File)(nil)
+
+func childErrorExit(logfile *os.File, code int) {
+	msg := fmt.Sprintf("Error: System errno: %d ", code)
+	LogFatal(logfile, msg)
+	if outputFile == errorFile {
+		CloseFile(outputFile)
+	} else {
+		CloseFile(outputFile)
+		CloseFile(inputFile)
+	}
+	syscall.Kill(syscall.Getpid(), syscall.SIGUSR1)
+	os.Exit(EXIT_FAILURE)
+}
 
 func childProcess(logfile *os.File, _config *Config) {
 
-	var inputFile *os.File
-	var outputFile *os.File
-	var errorFile *os.File
 	var err error
 
 	if _config.MaxStack != UNLIMITED {
@@ -19,10 +35,10 @@ func childProcess(logfile *os.File, _config *Config) {
 		}
 		err := syscall.Setrlimit(syscall.RLIMIT_STACK, &maxStack)
 		if err != nil {
-			os.Exit(SETRLIMIT_FAILED)
+			childErrorExit(logfile, SETRLIMIT_FAILED)
+			//os.Exit(SETRLIMIT_FAILED)
 		}
 	}
-
 	// set memory limit
 	// if memory_limit_check_only == 0, we only check memory usage number,
 	// because setrlimit(maxrss) will cause some crash issues
@@ -33,9 +49,11 @@ func childProcess(logfile *os.File, _config *Config) {
 		}
 		err := syscall.Setrlimit(syscall.RLIMIT_AS, &maxMemory)
 		if err != nil {
-			os.Exit(SETRLIMIT_FAILED)
+			childErrorExit(logfile, SETRLIMIT_FAILED)
+			//os.Exit(SETRLIMIT_FAILED)
 		}
 	}
+
 	// set cpu time limit (in seconds)
 	if _config.MaxCpuTime == UNLIMITED {
 		maxCpuTime := syscall.Rlimit{
@@ -44,7 +62,8 @@ func childProcess(logfile *os.File, _config *Config) {
 		}
 		err := syscall.Setrlimit(syscall.RLIMIT_CPU, &maxCpuTime)
 		if err != nil {
-			os.Exit(SETRLIMIT_FAILED)
+			childErrorExit(logfile, SETRLIMIT_FAILED)
+			//                      os.Exit(SETRLIMIT_FAILED)
 		}
 	}
 
@@ -59,7 +78,8 @@ func childProcess(logfile *os.File, _config *Config) {
 		}
 		err := syscall.Setrlimit(SYS_RLIMIT_NPROC, &maxProcessNumber)
 		if err != nil {
-			os.Exit(SETRLIMIT_FAILED)
+			childErrorExit(logfile, SETRLIMIT_FAILED)
+			//                      os.Exit(SETRLIMIT_FAILED)
 		}
 	}
 	// set output size limit
@@ -70,89 +90,107 @@ func childProcess(logfile *os.File, _config *Config) {
 		}
 		err := syscall.Setrlimit(syscall.RLIMIT_FSIZE, &maxOutputSize)
 		if err != nil {
-			os.Exit(SETRLIMIT_FAILED)
+			childErrorExit(logfile, SETRLIMIT_FAILED)
+			// os.Exit(SETRLIMIT_FAILED)
 		}
 	}
 
 	if _config.InputPath != "" {
 		inputFile, err = os.Open(_config.InputPath)
 		if err != nil {
-			os.Exit(DUP2_FAILED)
+			childErrorExit(logfile, DUP2_FAILED)
+			// os.Exit(DUP2_FAILED)
 		}
 		// redirect file -> stdin
 		// On success, these system calls return the new descriptor.
 		// On error, -1 is returned, and errno is set appropriately.
+		fmt.Println("child input_file: ", inputFile.Name())
 		if err := syscall.Dup2(int(inputFile.Fd()), int(os.Stdin.Fd())); err != nil {
-			os.Exit(DUP2_FAILED)
+			childErrorExit(logfile, DUP2_FAILED)
+			// os.Exit(DUP2_FAILED)
 		}
 	}
 
 	if _config.OutputPath != "" {
-		outputFile, err = os.OpenFile(_config.InputPath, os.O_WRONLY, 0666)
+		outputFile, err = os.OpenFile(_config.OutputPath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 		if err != nil {
-			os.Exit(DUP2_FAILED)
+			childErrorExit(logfile, DUP2_FAILED)
+			//os.Exit(DUP2_FAILED)
 		}
+		fmt.Println("child output_path: ", outputFile.Name())
 		if err := syscall.Dup2(int(outputFile.Fd()), int(os.Stdout.Fd())); err != nil {
-			os.Exit(DUP2_FAILED)
+			childErrorExit(logfile, DUP2_FAILED)
+			// os.Exit(DUP2_FAILED)
 		}
 	}
-
 	if _config.ErrorPath != "" {
 		// if outfile and error_file is the same path, we use the same file pointer
 		if _config.OutputPath != "" && _config.ErrorPath == _config.OutputPath {
 			errorFile = outputFile
 		} else {
-			errorFile, err = os.OpenFile(_config.ErrorPath, os.O_WRONLY, 0666)
+
+			errorFile, err = os.OpenFile(_config.ErrorPath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 			if err != nil {
-				os.Exit(DUP2_FAILED)
+				childErrorExit(logfile, DUP2_FAILED)
+				// os.Exit(DUP2_FAILED)
 			}
 		}
 		// redirect stderr -> file
 		if err := syscall.Dup2(int(errorFile.Fd()), int(os.Stderr.Fd())); err != nil {
-			os.Exit(DUP2_FAILED)
+			childErrorExit(logfile, DUP2_FAILED)
+			// os.Exit(DUP2_FAILED)
 		}
 	}
 
 	if _config.Gid != -1 {
 		if err := syscall.Setegid(int(_config.Gid)); err != nil {
-			os.Exit(SETUID_FAILED)
+			childErrorExit(logfile, SETUID_FAILED)
+			// os.Exit(SETUID_FAILED)
 		}
 	}
 
 	if _config.Uid != -1 {
 		if err := syscall.Seteuid(int(_config.Uid)); err != nil {
-			os.Exit(SETUID_FAILED)
+			childErrorExit(logfile, SETUID_FAILED)
+			// os.Exit(SETUID_FAILED)
 		}
 	}
 
 	if _config.SeccompRuleName != "" {
 		if "c_cpp" == _config.SeccompRuleName {
 			if c_cpp_file_io_seccomp_rules(_config) != SUCCESS {
-				os.Exit(LOAD_SECCOMP_FAILED)
+				childErrorExit(logfile, LOAD_SECCOMP_FAILED)
+				// os.Exit(LOAD_SECCOMP_FAILED)
 			}
 		} else if "c_cpp_file_io" == _config.SeccompRuleName {
 			if c_cpp_file_io_seccomp_rules(_config) != SUCCESS {
-				os.Exit(LOAD_SECCOMP_FAILED)
+				childErrorExit(logfile, LOAD_SECCOMP_FAILED)
+				// os.Exit(LOAD_SECCOMP_FAILED)
 			}
 		} else if "general" == _config.SeccompRuleName {
 			if general_seccomp_rules(_config) != SUCCESS {
-				os.Exit(LOAD_SECCOMP_FAILED)
+				childErrorExit(logfile, LOAD_SECCOMP_FAILED)
+				// os.Exit(LOAD_SECCOMP_FAILED)
 			}
 		} else if "golang" == _config.SeccompRuleName {
 			if golang_seccomp_rules(_config) != SUCCESS {
-				os.Exit(LOAD_SECCOMP_FAILED)
+				childErrorExit(logfile, LOAD_SECCOMP_FAILED)
+				// os.Exit(LOAD_SECCOMP_FAILED)
 			}
 		} else if "node" == _config.SeccompRuleName {
 			if node_seccomp_rules(_config) != SUCCESS {
-				os.Exit(LOAD_SECCOMP_FAILED)
+				childErrorExit(logfile, LOAD_SECCOMP_FAILED)
+				// os.Exit(LOAD_SECCOMP_FAILED)
 			}
 		} else {
-			os.Exit(LOAD_SECCOMP_FAILED)
+			childErrorExit(logfile, LOAD_SECCOMP_FAILED)
+			// os.Exit(LOAD_SECCOMP_FAILED)
 		}
 	}
 	if err := syscall.Exec(_config.ExePath, _config.Args, _config.Env); err != nil {
-		os.Exit(EXECVE_FAILED)
+		childErrorExit(logfile, EXECVE_FAILED)
+		// os.Exit(EXECVE_FAILED)
 	}
-
+	childErrorExit(logfile, EXECVE_FAILED)
 	//os.StartProcess(_config.ExePath)
 }

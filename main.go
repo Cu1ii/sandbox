@@ -59,12 +59,12 @@ func init() {
 	flag.StringVar(&exe_path, "exe_path", "", "Exe Path")
 	flag.StringVar(&input_file, "input_file", "", "Input Path")
 	flag.StringVar(&output_file, "output_file", "", "Output Path")
-	flag.StringVar(&error_file, "error_file", "", "Error Path")
+	flag.StringVar(&error_file, "error_path", "", "Error Path")
 	flag.StringVar(&log_path, "log_path", "", "Log Path")
 	flag.StringVar(&seccomp_rule_name, "seccomp_rule_name", "", "Seccomp Rule Name")
 
-	flag.IntVar(&uid, "uid", -1, "UID (default 65534)")
-	flag.IntVar(&gid, "gid", -1, "GID (default 65534)")
+	flag.IntVar(&uid, "uid", 65534, "UID (default 65534)")
+	flag.IntVar(&gid, "gid", 65534, "GID (default 65534)")
 	flag.Var(&args, "args", "Arg")
 	flag.Var(&env, "env", "Env")
 }
@@ -145,7 +145,7 @@ func main() {
 	if log_path != "" {
 		_config.LogPath = log_path
 	} else {
-		_config.ErrorPath = "judger.log"
+		_config.LogPath = "judger.log"
 	}
 
 	if seccomp_rule_name != "" {
@@ -168,7 +168,7 @@ func main() {
 	str := "{\n" +
 		"    \"cpu_time\": %d,\n" +
 		"    \"real_time\": %d,\n" +
-		"    \"memory\": %ld,\n" +
+		"    \"memory\": %d,\n" +
 		"    \"signal\": %d,\n" +
 		"    \"exit_code\": %d,\n" +
 		"    \"error\": %d,\n" +

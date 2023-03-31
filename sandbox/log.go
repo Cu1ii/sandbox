@@ -39,7 +39,7 @@ func init() {
 }
 
 func LogOpen(filename string) *os.File {
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND, 0666)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 	if err != nil {
 		log.Println("can not open log file " + filename)
 		return nil

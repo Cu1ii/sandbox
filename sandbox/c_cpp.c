@@ -35,8 +35,7 @@ int _c_cpp_seccomp_rules(const char* exe_path, int allow_write_file) {
     }
     // add extra rule for execve
     if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(execve), 1, SCMP_A0(SCMP_CMP_EQ, (scmp_datum_t)(exe_path))) != 0) {
-        //return LOAD_SECCOMP_FAILED;
-		return 0;
+        return LOAD_SECCOMP_FAILED;
     }
     if (!allow_write_file) {
         // do not allow "w" and "rw"

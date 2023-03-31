@@ -79,3 +79,11 @@ func TestCgoNode(t *testing.T) {
 func TestSayHello(t *testing.T) {
 	sayHello()
 }
+
+func TestSysE(t *testing.T) {
+	if err := syscall.Exec("ls", []string{"-a", "/home/cu1"}, []string{}); err != nil {
+		//childErrorExit(logfile, EXECVE_FAILED)
+		fmt.Println("FAILED")
+		// os.Exit(EXECVE_FAILED)
+	}
+}
