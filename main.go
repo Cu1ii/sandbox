@@ -105,13 +105,13 @@ func main() {
 	if max_process_number > -1 {
 		_config.MaxProcessNumber = max_process_number
 	} else {
-		_config.MaxStack = sandbox.UNLIMITED
+		_config.MaxProcessNumber = sandbox.UNLIMITED
 	}
 
 	if max_output_size > -1 {
 		_config.MaxOutputSize = int64(max_output_size)
 	} else {
-		_config.MaxStack = sandbox.UNLIMITED
+		_config.MaxOutputSize = sandbox.UNLIMITED
 	}
 
 	_config.ExePath = exe_path
@@ -163,6 +163,8 @@ func main() {
 	} else {
 		_config.Gid = 65534
 	}
+	fmt.Printf("cpu_time = %d, real_time = %d, memory = %d, stack = %d, process = %d, output_size = %d",
+		_config.MaxCpuTime, _config.MaxRealTime, _config.MaxMemory, _config.MaxStack, _config.MaxProcessNumber, _config.MaxOutputSize)
 	_result := sandbox.Result{}
 	sandbox.Run(&_config, &_result)
 	str := "{\n" +

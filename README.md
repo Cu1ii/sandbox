@@ -1,1 +1,1 @@
-这个人很懒 什么都没留下
+目前沙箱依旧有 bug, 大致定位在 `sandbox/child.go` 子进程执行 `syscall.Exec` 时会被

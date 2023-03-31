@@ -63,7 +63,7 @@ func childProcess(logfile *os.File, _config *Config) {
 		err := syscall.Setrlimit(syscall.RLIMIT_CPU, &maxCpuTime)
 		if err != nil {
 			childErrorExit(logfile, SETRLIMIT_FAILED)
-			//                      os.Exit(SETRLIMIT_FAILED)
+			// os.Exit(SETRLIMIT_FAILED)
 		}
 	}
 
@@ -79,7 +79,7 @@ func childProcess(logfile *os.File, _config *Config) {
 		err := syscall.Setrlimit(SYS_RLIMIT_NPROC, &maxProcessNumber)
 		if err != nil {
 			childErrorExit(logfile, SETRLIMIT_FAILED)
-			//                      os.Exit(SETRLIMIT_FAILED)
+			// os.Exit(SETRLIMIT_FAILED)
 		}
 	}
 	// set output size limit
@@ -104,7 +104,7 @@ func childProcess(logfile *os.File, _config *Config) {
 		// redirect file -> stdin
 		// On success, these system calls return the new descriptor.
 		// On error, -1 is returned, and errno is set appropriately.
-		fmt.Println("child input_file: ", inputFile.Name())
+		//fmt.Println("child input_file: ", inputFile.Name())
 		if err := syscall.Dup2(int(inputFile.Fd()), int(os.Stdin.Fd())); err != nil {
 			childErrorExit(logfile, DUP2_FAILED)
 			// os.Exit(DUP2_FAILED)
@@ -117,7 +117,7 @@ func childProcess(logfile *os.File, _config *Config) {
 			childErrorExit(logfile, DUP2_FAILED)
 			//os.Exit(DUP2_FAILED)
 		}
-		fmt.Println("child output_path: ", outputFile.Name())
+		//fmt.Println("child output_path: ", outputFile.Name())
 		if err := syscall.Dup2(int(outputFile.Fd()), int(os.Stdout.Fd())); err != nil {
 			childErrorExit(logfile, DUP2_FAILED)
 			// os.Exit(DUP2_FAILED)
