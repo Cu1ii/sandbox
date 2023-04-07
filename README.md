@@ -1,5 +1,12 @@
 目前沙箱依旧有 bug, 暂时定位不到 bug 的位置..
 
+## 后续准备填坑计划:
+
+- [ ] 使用 ptrace 替代 seccomp 检查可执行文件的路径
+- [ ] 使用 cgroup 优化资源限制
+- [ ] 参考一下 https://criyle.github.io/ 的实现 估计要研究一下 docker 的底层实现
+最后, 慢慢填坑吧...
+
 描述一下 bug 吧
 ## 使用 go / node 的过滤模式
 
