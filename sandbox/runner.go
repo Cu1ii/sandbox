@@ -94,7 +94,7 @@ func Run(_config *Config, _result *Result) error {
 	}
 	if (_config.MaxCpuTime < 1 && _config.MaxCpuTime != UNLIMITED) ||
 		(_config.MaxRealTime < 1 && _config.MaxRealTime != UNLIMITED) ||
-		(_config.MaxStack < 1) ||
+		(_config.MaxStack < 1 && _config.MaxStack != UNLIMITED) ||
 		(_config.MaxMemory < 1 && _config.MaxMemory != UNLIMITED) ||
 		(_config.MaxProcessNumber < 1 && _config.MaxProcessNumber != UNLIMITED) ||
 		(_config.MaxOutputSize < 1 && _config.MaxOutputSize != UNLIMITED) {
@@ -148,21 +148,24 @@ func Run(_config *Config, _result *Result) error {
 			// os.Exit(WaitFailed)
 		}
 		end := time.Now()
-		_result.RealTime = int(end.Unix() - start.Unix())
-		if _config.MaxRealTime != UNLIMITED {
+		_result.RealTime = int(end.Sub(start).Milliseconds())
 
-		}
-		//fmt.Println(status.Signal())
-		if status.Signal() != 0 {
+		_result.CpuTime = int(rusage.Utime.Sec*1000+rusage.Stime.Sec*1000) +
+			int(rusage.Utime.Usec/1000+rusage.Stime.Usec/1000)
+		_result.Memory = rusage.Maxrss * 1024
+
+		switch {
+		case status.Exited():
+			_result.ExitCode = status.ExitStatus()
+		case status.Signaled():
 			_result.Signal = int(status.Signal())
+		case status.Stopped():
+			_result.Signal = int(status.StopSignal())
 		}
 
 		if _result.Signal == int(syscall.SIGUSR1) {
 			_result.Result = SYSTEM_ERROR
 		} else {
-			_result.ExitCode = status.ExitStatus()
-			_result.CpuTime = int(rusage.Utime.Sec*1000 + rusage.Utime.Usec/1000)
-			_result.Memory = rusage.Maxrss * 1024
 			if _result.ExitCode != 0 {
 				_result.Result = RUNTIME_ERROR
 			}

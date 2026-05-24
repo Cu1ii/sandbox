@@ -55,7 +55,7 @@ func childProcess(logfile *os.File, _config *Config) {
 	}
 
 	// set cpu time limit (in seconds)
-	if _config.MaxCpuTime == UNLIMITED {
+	if _config.MaxCpuTime != UNLIMITED {
 		maxCpuTime := syscall.Rlimit{
 			Cur: uint64((_config.MaxCpuTime + 1000) / 1000),
 			Max: uint64((_config.MaxCpuTime + 1000) / 1000),
@@ -158,7 +158,7 @@ func childProcess(logfile *os.File, _config *Config) {
 
 	if _config.SeccompRuleName != "" {
 		if "c_cpp" == _config.SeccompRuleName {
-			if c_cpp_file_io_seccomp_rules(_config) != SUCCESS {
+			if c_cpp_seccomp_rules(_config) != SUCCESS {
 				childErrorExit(logfile, LOAD_SECCOMP_FAILED)
 				// os.Exit(LOAD_SECCOMP_FAILED)
 			}

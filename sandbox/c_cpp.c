@@ -17,7 +17,16 @@ int _c_cpp_seccomp_rules(const char* exe_path, int allow_write_file) {
                                 SCMP_SYS(close), SCMP_SYS(readlink),
                                 SCMP_SYS(sysinfo), SCMP_SYS(write),
                                 SCMP_SYS(writev), SCMP_SYS(lseek),
-                                SCMP_SYS(clock_gettime), SCMP_SYS(pread64)}; // add extra rule for pread64
+                                SCMP_SYS(clock_gettime), SCMP_SYS(pread64),
+                                // glibc startup
+                                SCMP_SYS(set_tid_address), SCMP_SYS(set_robust_list),
+                                SCMP_SYS(rseq), SCMP_SYS(prlimit64),
+                                SCMP_SYS(getrandom), SCMP_SYS(newfstatat),
+                                SCMP_SYS(stat), SCMP_SYS(lstat),
+                                SCMP_SYS(futex), SCMP_SYS(exit),
+                                SCMP_SYS(rt_sigaction), SCMP_SYS(rt_sigprocmask),
+                                SCMP_SYS(ioctl), SCMP_SYS(getpid),
+                                SCMP_SYS(gettid)};
 
     int syscalls_whitelist_length = sizeof(syscalls_whitelist) / sizeof(int);
     scmp_filter_ctx ctx = NULL;
@@ -25,8 +34,7 @@ int _c_cpp_seccomp_rules(const char* exe_path, int allow_write_file) {
     // load seccomp rules
     ctx = seccomp_init(SCMP_ACT_KILL);
     if (!ctx) {
-        // return LOAD_SECCOMP_FAILED;
-		return 0;
+        return LOAD_SECCOMP_FAILED;
     }
     for (int i = 0; i < syscalls_whitelist_length; i++) {
         if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, syscalls_whitelist[i], 0) != 0) {
@@ -50,6 +58,9 @@ int _c_cpp_seccomp_rules(const char* exe_path, int allow_write_file) {
         if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(open), 0) != 0) {
             return LOAD_SECCOMP_FAILED;
         }
+        if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(openat), 0) != 0) {
+            return LOAD_SECCOMP_FAILED;
+        }
         if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(dup), 0) != 0) {
             return LOAD_SECCOMP_FAILED;
         }
@@ -69,5 +80,5 @@ int _c_cpp_seccomp_rules(const char* exe_path, int allow_write_file) {
 
 
 int c_cpp_seccomp_rules(const char* exe_path, int allow_write_file) {
-    return _c_cpp_seccomp_rules(exe_path, 0);
+    return _c_cpp_seccomp_rules(exe_path, allow_write_file);
 }

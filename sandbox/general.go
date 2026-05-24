@@ -45,17 +45,27 @@ func generalSeccompRules(_config *Config) int {
 	//	return LOAD_SECCOMP_FAILED
 	//}
 
-	// do not allow "w" and "rw" using open
+	// do not allow "w" using open
 	if err := filter.AddRuleConditional(
 		syscall.SYS_OPEN,
 		libseccomp.ActKillThread,
 		[]libseccomp.ScmpCondition{
-			libseccomp.ScmpCondition{
+			{
 				Argument: 1,
 				Op:       libseccomp.CompareMaskedEqual,
 				Operand1: uint64(os.O_WRONLY),
 				Operand2: uint64(os.O_WRONLY),
-			}, {
+			},
+		},
+	); err != nil {
+		return LOAD_SECCOMP_FAILED
+	}
+	// do not allow "rw" using open
+	if err := filter.AddRuleConditional(
+		syscall.SYS_OPEN,
+		libseccomp.ActKillThread,
+		[]libseccomp.ScmpCondition{
+			{
 				Argument: 1,
 				Op:       libseccomp.CompareMaskedEqual,
 				Operand1: uint64(os.O_RDWR),
@@ -65,17 +75,27 @@ func generalSeccompRules(_config *Config) int {
 	); err != nil {
 		return LOAD_SECCOMP_FAILED
 	}
-	// do not allow "w" and "rw" using openat
+	// do not allow "w" using openat
 	if err := filter.AddRuleConditional(
 		syscall.SYS_OPENAT,
 		libseccomp.ActKillThread,
 		[]libseccomp.ScmpCondition{
-			libseccomp.ScmpCondition{
+			{
 				Argument: 2,
 				Op:       libseccomp.CompareMaskedEqual,
 				Operand1: uint64(os.O_WRONLY),
 				Operand2: uint64(os.O_WRONLY),
-			}, {
+			},
+		},
+	); err != nil {
+		return LOAD_SECCOMP_FAILED
+	}
+	// do not allow "rw" using openat
+	if err := filter.AddRuleConditional(
+		syscall.SYS_OPENAT,
+		libseccomp.ActKillThread,
+		[]libseccomp.ScmpCondition{
+			{
 				Argument: 2,
 				Op:       libseccomp.CompareMaskedEqual,
 				Operand1: uint64(os.O_RDWR),

@@ -135,11 +135,13 @@ func main() {
 	}
 
 	if len(args) > 0 {
-		copy(_config.Args, args)
+		_config.Args = append([]string{exe_path}, args...)
+	} else {
+		_config.Args = []string{exe_path}
 	}
 
 	if len(env) > 0 {
-		copy(_config.Env, env)
+		_config.Env = append([]string(nil), env...)
 	}
 
 	if log_path != "" {
